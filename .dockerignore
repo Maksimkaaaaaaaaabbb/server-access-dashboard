@@ -1,0 +1,30 @@
+# Python Cache and venv
+backend/app/__pycache__/
+backend/app/.venv/
+frontend/node_modules/
+frontend/.venv/
+.venv/
+
+# local configuration files
+backend/app/log_state.json
+backend/app/logs.db
+backend/app/.env 
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# docker specific files
+docker/
+
+# other files to ignore
+*.pyc
+dist/
+build/
+*.log
+*.tmp
+*.bak

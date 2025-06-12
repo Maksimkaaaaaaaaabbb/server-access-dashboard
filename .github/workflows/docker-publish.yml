@@ -1,0 +1,81 @@
+name: Build and Push Docker Images
+
+# Trigger: on push to main branch OR on creation of a new tag
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker/**"
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Extract metadata for Backend image
+        id: meta_backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/sad-backend
+          tags: |
+            # type=semver: Creates version tags (e.g., 1.2.3, 1.2, 1) when a git tag like v1.2.3 is pushed.
+            type=semver,pattern={{version}}
+            # type=raw: Creates the 'latest' tag, but ONLY for pushes to the main branch.
+            type=raw,value=latest,enable={{is_default_branch}}
+            # type=sha: Creates a short git SHA tag for every push, useful for debugging.
+            type=sha,prefix=,format=short
+
+      - name: Extract metadata for Frontend image
+        id: meta_frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/sad-frontend
+          tags: |
+            # Same tagging strategy as the backend
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=,format=short
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/backend.Dockerfile
+          push: true
+          tags: ${{ steps.meta_backend.outputs.tags }}
+          labels: ${{ steps.meta_backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/frontend.Dockerfile
+          push: true
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

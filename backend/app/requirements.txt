@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+python-dotenv
+geoip2
+apscheduler>=3.0.0,<4.0.0

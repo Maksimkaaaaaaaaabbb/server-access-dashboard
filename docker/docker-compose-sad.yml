@@ -1,0 +1,29 @@
+services:
+  sad-backend:
+    image: ghcr.io/flitschi7/server-access-dashboard/sad-backend:latest
+    container_name: sad-backend
+    restart: unless-stopped
+    volumes:
+      - /FOLDER_TO_NGINXPROXYMANAGER/nginxproxymanager/data/logs:/nginx_logs:ro
+      - /APP_FOLDER:/app/database
+    ports:
+      - 8000:8000
+    environment:
+      - DATABASE_URL=sqlite:////app/database/logs.db
+      - LOG_DIRECTORY=/nginx_logs
+      - API_KEY=YOUR_API_KEY
+      - GEOIP_DATABASE_PATH=/app/database/GeoLite2-Country.mmdb
+      - MAXMIND_LICENSE_KEY=YOUR_MAXMIND_LICENSE_KEY
+      - LOG_COLLECTION_INTERVAL_MINUTES=${LOG_COLLECTION_INTERVAL_MINUTES:-90} # Default to 90 minutes
+
+  sad-frontend:
+    image: ghcr.io/flitschi7/server-access-dashboard/sad-frontend:latest
+    container_name: sad-frontend
+    restart: unless-stopped
+    ports:
+      - 5577:80
+    environment:
+      - API_URL=YOUR_API_URL
+      - API_KEY=YOUR_API_KEY
+    depends_on:
+      - sad-backend
